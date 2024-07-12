@@ -7,7 +7,7 @@ import {
   getAllBookings,
   getBookingById
 } from '../controls/booking.js'; // Corrected import path
-import { verifyAdmin, verifyToken, verifyUser } from "../utils/verifyToken.js";
+import { verifyAdmin, verifyToken, verifyUser } from "../utils/verifytoken.js";
 
 const router = express.Router();
 

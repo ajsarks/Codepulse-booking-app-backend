@@ -1,6 +1,6 @@
 import express from 'express';
 import { createClass, updateClass, deleteClass, getClass, getAllClasses, countByCity, searchByCity } from '../controls/classcontro.js';
-import { verifyAdmin } from '../utils/verifyToken.js';
+import { verifyAdmin } from '../utils/verifytoken.js';
 
 const router = express.Router();
 

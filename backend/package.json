@@ -32,9 +32,9 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "validator.js": "^2.0.4",
-    "xml2js": "^0.4.23",        // Added for XML parsing
-    "csv-parser": "^3.0.0",      // Added for CSV parsing
-    "js-yaml": "^4.1.0"          // Added for YAML parsing
+    "xml2js": "^0.4.23",
+    "csv-parser": "^3.0.0",
+    "js-yaml": "^4.1.0"
   },
   "engines": {
     "node": "~16.20.0"

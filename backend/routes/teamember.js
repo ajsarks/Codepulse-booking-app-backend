@@ -6,7 +6,7 @@ import {
   updateTeamMember,
   deleteTeamMember
 } from '../controls/teammembercontro.js'; // Ensure the correct import path to your controllers
-import { verifyAdmin } from '../utils/verifyToken.js'; // Adjust the path as necessary
+import { verifyAdmin } from '../utils/verifytoken.js'; // Adjust the path as necessary
 
 const router = express.Router();
 

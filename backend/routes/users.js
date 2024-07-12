@@ -5,24 +5,23 @@ import {
   getUser,
   getAllUsers,
 } from "../controls/usercontro.js";
-import { verifyAdmin, verifyToken, verifyUser } from "../utils/verifytoken.js";
+import { verifyAdmin, verifyToken, verifyUser, verifyUserOrAdmin } from "../utils/verifytoken.js";
 
 const router = express.Router();
-router.get("/checkauthentication", verifyToken, (req,res,next)=>{
+router.get("/checkauthentication", verifyToken, (req, res, next) => {
   res.send("Authenticated");
-})
+});
 
+// UPDATE
+router.put("/:id", verifyUserOrAdmin, updateUser);
 
-//UPDATE
-router.put("/:id", verifyUser, updateUser);
+// DELETE
+router.delete("/:id", verifyUserOrAdmin, deleteUser);
 
-//DELETE
-router.delete("/:id", verifyUser, deleteUser);
+// GET
+router.get("/", getAllUsers);
 
-//GET
-router.get("/",getAllUsers);
-
-//GET ALL
-router.get("/:id",getUser);
+// GET ALL
+router.get("/:id", getUser);
 
 export default router;

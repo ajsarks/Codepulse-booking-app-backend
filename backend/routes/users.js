@@ -5,7 +5,7 @@ import {
   getUser,
   getAllUsers,
 } from "../controls/usercontro.js";
-import { verifyAdmin, verifyToken, verifyUser } from "../utils/verifyToken.js";
+import { verifyAdmin, verifyToken, verifyUser } from "../utils/verifytoken.js";
 
 const router = express.Router();
 router.get("/checkauthentication", verifyToken, (req,res,next)=>{

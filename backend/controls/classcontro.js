@@ -12,9 +12,6 @@ const getTeamIds = async (teamNames) => {
 // CREATE a new class
 export const createClass = async (req, res, next) => {
   try {
-    // Convert city name to lowercase
-    req.body.city = req.body.city?.toLowerCase();
-
     // Convert team names to team IDs
     let teamIds = [];
     if (req.body.teams && Array.isArray(req.body.teams)) {
@@ -45,9 +42,6 @@ export const createClass = async (req, res, next) => {
 // UPDATE a class by ID
 export const updateClass = async (req, res, next) => {
   try {
-    // Convert city name to lowercase
-    req.body.city = req.body.city?.toLowerCase();
-
     // Convert team names to team IDs
     let teamIds = [];
     if (req.body.teams && Array.isArray(req.body.teams)) {
@@ -105,8 +99,8 @@ export const getAllClasses = async (req, res, next) => {
 // Count classes by city
 export const countByCity = async (req, res, next) => {
   try {
-    const city = req.query.city.toLowerCase();
-    const count = await Class.countDocuments({ city });
+    const city = req.query.city;
+    const count = await Class.countDocuments({ city: new RegExp(`^${city}$`, 'i') });
     res.status(200).json({ count });
   } catch (err) {
     next(err); // Passes the error to the global error handler
@@ -116,8 +110,8 @@ export const countByCity = async (req, res, next) => {
 // Search classes by city
 export const searchByCity = async (req, res, next) => {
   try {
-    const city = req.query.city.toLowerCase();
-    const classes = await Class.find({ city });
+    const city = req.query.city;
+    const classes = await Class.find({ city: new RegExp(`^${city}$`, 'i') });
     res.status(200).json(classes);
   } catch (err) {
     next(err); // Passes the error to the global error handler

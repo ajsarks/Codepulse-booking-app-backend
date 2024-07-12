@@ -73,7 +73,7 @@ export const register = async (req, res, next) => {
       name,
       email,
       password: hashedPassword,
-      isConfirmed: isConfirmed || false, // Set isConfirmed based on the request body
+      isConfirmed: isConfirmed, // Set isConfirmed based on the request body
     });
 
     await newUser.save();

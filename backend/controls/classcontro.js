@@ -118,6 +118,17 @@ export const searchByCity = async (req, res, next) => {
   }
 };
 
+// Search classes by type
+export const searchByType = async (req, res, next) => {
+  try {
+    const type = req.query.type;
+    const classes = await Class.find({ type: new RegExp(`^${type}$`, 'i') });
+    res.status(200).json(classes);
+  } catch (err) {
+    next(err); // Passes the error to the global error handler
+  }
+};
+
 export default {
   createClass,
   updateClass,
@@ -126,4 +137,5 @@ export default {
   getAllClasses,
   countByCity,
   searchByCity,
+  searchByType,
 };

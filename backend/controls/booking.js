@@ -6,6 +6,7 @@ import Class from '../models/classes.js'; // Renamed to avoid using the reserved
 import TeamMember from '../models/TeamMembers.js'; // Corrected import path
 import schedule from 'node-schedule'; // Import node-schedule for scheduling jobs
 import findNextAvailableDate from '../utils/nextabvialable.js'; // Corrected import path
+import e from 'express';
 
 export const createBooking = async (req, res) => {
   try {
@@ -136,60 +137,86 @@ const scheduleCancellation = async (bookingId, cancellationDate) => {
 
 export const updateBooking = async (req, res) => {
   try {
+    const { date, time, classid, location, userId, phonenumber, additionalcomments, classsetting } = req.body;
     const bookingId = req.params.id;
-    const updates = req.body;
 
-    // Find the original booking to compare changes
-    const originalBooking = await Booking.findById(bookingId);
-    if (!originalBooking) {
-      return res.status(404).json({ message: 'Booking not found.' });
+    if (!Array.isArray(date) || date.length === 0) {
+      return res.status(400).json({ message: 'Please provide an array of dates.' });
     }
 
-    // Check if 'location' field is being updated
-    if (updates.location && updates.location !== originalBooking.location) {
-      // Fetch associated class to get team addresses
-      const classData = await Class.findById(originalBooking.classid).populate('teams');
-      if (!classData || classData.teams.length === 0) {
-        return res.status(404).json({ message: 'No teams found for the provided class ID.' });
-      }
-
-      const teamAddresses = classData.teams.map(team => team.address);
-      const maxTravelTime = 60 * 60; // 60 minutes in seconds
-
-      const closestTeam = await getClosestTeam(updates.location, teamAddresses, maxTravelTime);
-      if (!closestTeam) {
-        return res.status(404).json({ message: 'No team member found close to the provided location.' });
-      }
-
-      // Update teamMember with closest team if location changed
-      updates.teamMember = classData.teams.find(team => team.address === closestTeam.closestTeam)?._id;
+    // Fetch the user by ID to get the name and email
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
     }
 
-    // Check if 'date' or 'time' fields are being updated
-    if ((updates.date && updates.date !== originalBooking.date) || (updates.time && updates.time !== originalBooking.time)) {
-      const allocatedTeamMembersResult = await allocateTeamMembers(new Date(updates.date[0] || originalBooking.date[0]), originalBooking.teamMember);
-
-      if (typeof allocatedTeamMembersResult === 'object' && allocatedTeamMembersResult.message) {
-        // Handle the case where no team members are available and a next available date is suggested
-        return res.status(400).json(allocatedTeamMembersResult);
-      }
-
-      // Update teamMember with allocated members if date or time changed
-      updates.teamMember = allocatedTeamMembersResult.map(member => member._id);
+    // Fetch the class by ID to get associated teams
+    const classData = await Class.findById(classid).populate('teams');
+    if (!classData || classData.teams.length === 0) {
+      return res.status(404).json({ message: 'No teams found for the provided class ID.' });
     }
 
-    // Perform the update with the modified 'updates' object
-    const updatedBooking = await Booking.findByIdAndUpdate(bookingId, updates, { new: true, runValidators: true });
+    // Find the closest team based on the provided address
+    const closestTeam = await getClosestTeam(location, classData.teams.map(team => team.address), 3600); // 60 minutes
+    if (!closestTeam) {
+      return res.status(404).json({ message: 'No team member found close to the provided location.' });
+    }
+
+    // Convert closestTeam address back to team ID
+    const teamId = classData.teams.find(team => team.address === closestTeam.closestTeam)?._id;
+    if (!teamId) {
+      return res.status(404).json({ message: 'Team ID not found for closest team address.' });
+    }
+
+    const allocationErrors = [];
+    let allocatedTeamMembers = []; // Define allocatedTeamMembers here
+
+    for (const dateItem of date) {
+      try {
+        allocatedTeamMembers = await allocateTeamMembers(new Date(dateItem), teamId);
+      } catch (allocationError) {
+        console.error('Error allocating team members:', allocationError);
+        const nextAvailableDate = await findNextAvailableDate(teamId, new Date(dateItem));
+        allocationErrors.push({ date: dateItem, message: 'No team members available on the requested date.', nextAvailableDate });
+        continue;
+      }
+
+      if (allocatedTeamMembers.length === 0) {
+        // If no team members are available, find the next available date
+        const nextAvailableDate = await findNextAvailableDate(teamId, new Date(dateItem));
+        allocationErrors.push({ date: dateItem, message: 'No team members available on the requested date.', nextAvailableDate });
+        continue;
+      }
+    }
+
+    if (allocationErrors.length > 0) {
+      return res.status(400).json({ message: 'No team members available on the requested dates.', allocationErrors });
+    }
+
+    // Update the booking with new data
+    const updatedBooking = await Booking.findByIdAndUpdate(bookingId, {
+      date,
+      time,
+      teamMember: allocatedTeamMembers.map(member => member._id),
+      classid,
+      userId: user._id,
+      name: user.name,
+      email: user.email,
+      location,
+      phonenumber,
+      additionalcomments,
+      classsetting,
+      isconfirmed: req.user.isAdmin // Set isconfirmed based on admin status
+    }, { new: true, runValidators: true });
+
     if (!updatedBooking) {
       return res.status(404).json({ message: 'Booking not found.' });
     }
 
     // If date or time changed, re-schedule the cancellation job
-    if (updates.date || updates.time) {
-      const twoDaysBefore = new Date(updates.date[0] || originalBooking.date[0]);
-      twoDaysBefore.setDate(twoDaysBefore.getDate() - 2);
-      scheduleCancellation(updatedBooking._id, twoDaysBefore);
-    }
+    const twoDaysBefore = new Date(date[0]);
+    twoDaysBefore.setDate(twoDaysBefore.getDate() - 2);
+    scheduleCancellation(updatedBooking._id, twoDaysBefore);
 
     res.status(200).json({ message: 'Booking updated successfully.', booking: updatedBooking });
   } catch (error) {
@@ -197,6 +224,7 @@ export const updateBooking = async (req, res) => {
     res.status(500).json({ message: 'Failed to update booking.', error: error.message });
   }
 };
+
 
 export const confirmBooking = async (req, res) => {
   try {
@@ -301,5 +329,18 @@ export const getBookingById = async (req, res) => {
   } catch (error) {
     console.error('Error fetching booking by ID:', error);
     res.status(500).json({ message: 'Failed to fetch booking.', error: error.message });
+  }
+};
+export const getBookingsByUserId = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const bookings = await Booking.find({ userId });
+    if (!bookings || bookings.length === 0) {
+      return res.status(404).json({ message: 'No bookings found for the provided user ID.' });
+    }
+    res.status(200).json(bookings);
+  } catch (error) {
+    console.error('Error fetching bookings by user ID:', error);
+    res.status(500).json({ message: 'Failed to fetch bookings.', error: error.message });
   }
 };

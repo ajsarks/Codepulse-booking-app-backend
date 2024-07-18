@@ -12,7 +12,7 @@ import { verifyAdmin, verifyToken, verifyUser } from "../utils/verifytoken.js";
 const router = express.Router();
 
 // Route to create a booking
-router.post('/', verifyUser, createBooking);
+router.post('/',  createBooking);
 
 // Route to update a booking
 router.put('/:id', verifyUser, updateBooking);

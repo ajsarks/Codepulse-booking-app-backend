@@ -5,7 +5,8 @@ import {
   deleteBooking,
   confirmBooking,
   getAllBookings,
-  getBookingById
+  getBookingById,
+  getBookingsByUserId 
 } from '../controls/booking.js'; // Corrected import path
 import { verifyAdmin, verifyToken, verifyUser } from "../utils/verifytoken.js";
 
@@ -32,5 +33,7 @@ router.get('/',  getAllBookings);
 
 // Route to get a booking by ID
 router.get('/:id', getBookingById);
+
+router.get('/user/:userId', getBookingsByUserId);
 
 export default router;

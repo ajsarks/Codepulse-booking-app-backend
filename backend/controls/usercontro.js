@@ -22,7 +22,7 @@ export const getAllUsers= async (req, res, next) => {
 export const deleteUser = async (req, res, next) => {
     try {
         await User.findByIdAndDelete(req.params.id);
-        res.status(200).json({ message: 'Class deleted successfully' });
+        res.status(200).json({ message: 'User deleted successfully' });
     } catch (err) {
         next(err);
     }
@@ -30,8 +30,8 @@ export const deleteUser = async (req, res, next) => {
 
 export const updateUser = async (req, res, next) => {
     try {
-        const updatedClass = await Class.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        res.status(200).json(updatedClass);
+        const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.status(200).json(updatedUser);
     } catch (err) {
         next(err);
     }

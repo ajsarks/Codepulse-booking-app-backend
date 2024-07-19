@@ -6,7 +6,6 @@ import Class from '../models/classes.js'; // Renamed to avoid using the reserved
 import TeamMember from '../models/TeamMembers.js'; // Corrected import path
 import schedule from 'node-schedule'; // Import node-schedule for scheduling jobs
 import findNextAvailableDate from '../utils/nextabvialable.js'; // Corrected import path
-import e from 'express';
 
 export const createBooking = async (req, res) => {
   try {

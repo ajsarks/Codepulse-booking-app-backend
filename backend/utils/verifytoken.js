@@ -1,6 +1,24 @@
 import jwt from "jsonwebtoken";
 import { createError } from "../utils/error.js";
+export const verifyBookingOwnerOrAdmin = (req, res, next) => {
+  verifyToken(req, res, async (err) => {
+    if (err) return next(err);
 
+    try {
+      const booking = await Booking.findById(req.params.id);
+      if (!booking) {
+        return next(createError(404, "Booking not found!"));
+      }
+
+      if (req.user.id === booking.userId.toString() || req.user.isAdmin) {
+        next();
+      } else {
+        return next(createError(403, "You are not authorized!"));
+      }
+    } catch (error) {
+      next(createError(500, "Internal Server Error"));
+    }
+  });
 export const verifyToken = (req, res, next) => {
   const token = req.cookies.access_token;
   if (!token) {
@@ -13,17 +31,23 @@ export const verifyToken = (req, res, next) => {
     next();
   });
 };
+
 export const verifyUserOrAdmin = (req, res, next) => {
-  verifyToken(req, res, () => {
+  verifyToken(req, res, (err) => {
+    if (err) return next(err);
+
     if (req.user.id === req.params.id || req.user.isAdmin) {
       next();
     } else {
-      res.status(403).json("You are not allowed to do that!");
+      return next(createError(403, "You are not authorized!"));
     }
   });
 };
+
 export const verifyUser = (req, res, next) => {
-  verifyToken(req, res, next, () => {
+  verifyToken(req, res, (err) => {
+    if (err) return next(err);
+
     if (req.user.id === req.params.id || req.user.isAdmin) {
       next();
     } else {
@@ -33,7 +57,9 @@ export const verifyUser = (req, res, next) => {
 };
 
 export const verifyAdmin = (req, res, next) => {
-  verifyToken(req, res, next, () => {
+  verifyToken(req, res, (err) => {
+    if (err) return next(err);
+
     if (req.user.isAdmin) {
       next();
     } else {

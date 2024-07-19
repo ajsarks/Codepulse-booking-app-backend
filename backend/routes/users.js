@@ -8,20 +8,22 @@ import {
 import { verifyAdmin, verifyToken, verifyUser, verifyUserOrAdmin } from "../utils/verifytoken.js";
 
 const router = express.Router();
+
+// Route to check authentication
 router.get("/checkauthentication", verifyToken, (req, res, next) => {
   res.send("Authenticated");
 });
 
-// UPDATE
+// UPDATE user - accessible by the user themselves or an admin
 router.put("/:id", verifyUserOrAdmin, updateUser);
 
-// DELETE
+// DELETE user - accessible by the user themselves or an admin
 router.delete("/:id", verifyUserOrAdmin, deleteUser);
 
-// GET
+// GET all users - no authentication required
 router.get("/", getAllUsers);
 
-// GET ALL
+// GET a specific user by ID - no authentication required
 router.get("/:id", getUser);
 
 export default router;

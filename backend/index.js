@@ -23,7 +23,7 @@ const app = express();
 
 // Middleware
 const corsOptions = {
-  origin: true, // Allow requests from any origin
+  origin: true, // Your frontend URL
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true, // Allow cookies to be sent
   optionsSuccessStatus: 204
@@ -33,10 +33,10 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 app.use(session({
-  secret: 'your_secret_key', // Change this to a secure key
+  secret: process.env.JWT, // Change this to a secure key
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: false } // Set secure to true if using HTTPS
+  cookie: { secure: process.env.NODE_ENV === 'production' } // Set secure to true if using HTTPS
 }));
 
 // Initialize Passport

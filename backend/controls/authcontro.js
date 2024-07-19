@@ -126,8 +126,8 @@ export const login = async (req, res, next) => {
     res
       .cookie('access_token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'None', // Set SameSite attribute to None for cross-site usage
+        secure: process.env.NODE_ENV === 'production', // Set to true in production
+        sameSite: 'Lax', // Set SameSite attribute to Lax for local testing
       })
       .status(200)
       .json({ details: { ...otherDetails }, isAdmin });

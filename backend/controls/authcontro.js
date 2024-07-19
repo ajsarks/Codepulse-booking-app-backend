@@ -250,5 +250,3 @@ export const confirmEmailHandler = async (req, res, next) => {
     next(err);
   }
 };
-
-export default router;

@@ -1,5 +1,8 @@
 import jwt from "jsonwebtoken";
 import { createError } from "../utils/error.js";
+import Booking from '../models/booking.js'; // Import the Booking model
+import User from '../models/user.js'; // Import the User model
+
 export const verifyBookingOwnerOrAdmin = (req, res, next) => {
   verifyToken(req, res, async (err) => {
     if (err) return next(err);
@@ -20,6 +23,7 @@ export const verifyBookingOwnerOrAdmin = (req, res, next) => {
     }
   });
 }; 
+
 export const verifyToken = (req, res, next) => {
   const token = req.cookies.access_token;
   if (!token) {
@@ -33,14 +37,23 @@ export const verifyToken = (req, res, next) => {
   });
 };
 
-export const verifyUserOrAdmin = (req, res, next) => {
-  verifyToken(req, res, (err) => {
+export const verifyUserOwnerOrAdmin = (req, res, next) => {
+  verifyToken(req, res, async (err) => {
     if (err) return next(err);
 
-    if (req.user.id === req.params.id || req.user.isAdmin) {
-      next();
-    } else {
-      return next(createError(403, "You are not authorized!"));
+    try {
+      const user = await User.findById(req.params.id);
+      if (!user) {
+        return next(createError(404, "User not found!"));
+      }
+
+      if (req.user.id === user._id.toString() || req.user.isAdmin) {
+        next();
+      } else {
+        return next(createError(403, "You are not authorized!"));
+      }
+    } catch (error) {
+      next(createError(500, "Internal Server Error"));
     }
   });
 };

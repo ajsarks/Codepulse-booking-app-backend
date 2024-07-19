@@ -5,7 +5,7 @@ import {
   getUser,
   getAllUsers,
 } from "../controls/usercontro.js";
-import { verifyAdmin, verifyToken, verifyUser, verifyUserOrAdmin } from "../utils/verifytoken.js";
+import { verifyAdmin, verifyToken, verifyUser, verifyUserOwnerOrAdmin } from "../utils/verifytoken.js";
 
 const router = express.Router();
 
@@ -15,10 +15,10 @@ router.get("/checkauthentication", verifyToken, (req, res, next) => {
 });
 
 // UPDATE user - accessible by the user themselves or an admin
-router.put("/:id", verifyUserOrAdmin, updateUser);
+router.put("/:id", verifyUserOwnerOrAdmin, updateUser);
 
 // DELETE user - accessible by the user themselves or an admin
-router.delete("/:id", verifyUserOrAdmin, deleteUser);
+router.delete("/:id", verifyUserOwnerOrAdmin, deleteUser);
 
 // GET all users - no authentication required
 router.get("/", getAllUsers);

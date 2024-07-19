@@ -9,7 +9,7 @@ import {
   getBookingById,
   getBookingsByUserId 
 } from '../controls/booking.js'; // Corrected import path
-import { verifyAdmin, verifyToken, verifyUser } from "../utils/verifytoken.js";
+import { verifyAdmin,verifyUserOrAdmin, verifyToken, verifyUser } from "../utils/verifytoken.js";
 
 const router = express.Router();
 
@@ -26,8 +26,8 @@ router.delete('/:id', verifyAdmin, deleteBooking);
 router.put('/confirm/:id', verifyAdmin, confirmBooking);
 
 // Route to cancel a booking
-router.put('/cancel/:id', verifyUser, cancelBooking);
-router.put('/cancel/:id', verifyAdmin, cancelBooking);
+router.put('/cancel/:id', verifyUserOrAdmin, cancelBooking);
+
 
 // Route to get all bookings
 router.get('/', getAllBookings);

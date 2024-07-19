@@ -5,7 +5,7 @@ import emailValidator from 'email-validator';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import { createError } from '../utils/error.js';
-import User from '../models/user.js'; // Ensure consistent casing
+import User from '../models/user.js';
 
 dotenv.config();
 
@@ -25,7 +25,7 @@ const sendConfirmationEmail = (user) => {
   const token = jwt.sign(
     { id: user._id },
     process.env.EMAIL_SECRET,
-    { expiresIn: '1d' } // Token expiration time
+    { expiresIn: '1d' }
   );
 
   const url = `${process.env.BASE_URL}/api/confirmation/${token}`;
@@ -73,7 +73,7 @@ export const register = async (req, res, next) => {
       name,
       email,
       password: hashedPassword,
-      isConfirmed: isConfirmed, // Set isConfirmed based on the request body
+      isConfirmed: isConfirmed,
     });
 
     await newUser.save();
@@ -86,7 +86,6 @@ export const register = async (req, res, next) => {
     }
   } catch (err) {
     if (err.code === 11000) {
-      // Handle duplicate key error
       return next(createError(400, 'Email already exists'));
     }
     next(err);
@@ -127,8 +126,8 @@ export const login = async (req, res, next) => {
     res
       .cookie('access_token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // Set to true in production
-        sameSite: 'None', // Ensure cross-site cookies are allowed
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'None', // Set SameSite attribute to None for cross-site usage
       })
       .status(200)
       .json({ details: { ...otherDetails }, isAdmin });
@@ -159,7 +158,7 @@ export const forgotPassword = async (req, res) => {
       { _id: user._id },
       {
         resetPasswordToken: token,
-        resetPasswordExpires: Date.now() + 3600000, // 1 hour
+        resetPasswordExpires: Date.now() + 3600000,
       }
     );
 
@@ -212,7 +211,6 @@ export const resetPassword = async (req, res) => {
 
     const hashedPassword = bcrypt.hashSync(newPassword, 10);
 
-    // Update the user with the new password and invalidate the reset token
     await User.updateOne(
       { _id: user._id },
       {
@@ -252,3 +250,5 @@ export const confirmEmailHandler = async (req, res, next) => {
     next(err);
   }
 };
+
+export default router;

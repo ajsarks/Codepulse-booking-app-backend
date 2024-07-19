@@ -19,6 +19,7 @@ export const verifyBookingOwnerOrAdmin = (req, res, next) => {
       next(createError(500, "Internal Server Error"));
     }
   });
+}; 
 export const verifyToken = (req, res, next) => {
   const token = req.cookies.access_token;
   if (!token) {
@@ -66,4 +67,4 @@ export const verifyAdmin = (req, res, next) => {
       return next(createError(403, "You are not authorized!"));
     }
   });
-};
+}

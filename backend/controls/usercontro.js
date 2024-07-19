@@ -1,4 +1,7 @@
 import User from '../models/user.js';
+import bcrypt from 'bcryptjs';
+import emailValidator from 'email-validator';
+import { createError } from '../utils/error.js';
 
 
 export const getUser = async (req, res, next) => {
@@ -30,7 +33,36 @@ export const deleteUser = async (req, res, next) => {
 
 export const updateUser = async (req, res, next) => {
     try {
-        const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const { name, email, password, isConfirmed } = req.body;
+
+        if (!name) {
+            return next(createError(400, 'Name is required'));
+        }
+        if (!email || !emailValidator.validate(email)) {
+            return next(createError(400, 'Valid email is required'));
+        }
+        if (!password) {
+            return next(createError(400, 'Password is required'));
+        }
+        if (password.length < 8 || !/[^a-zA-Z]/.test(password)) {
+            return next(createError(400, 'Password must be at least 8 characters long and contain at least one non-alphabetical character'));
+        }
+
+        const hashedPassword = bcrypt.hashSync(password, 10);
+
+        await User.findByIdAndUpdate(
+            req.params.id,
+            {
+                name,
+                email,
+                password: hashedPassword,
+                isConfirmed,
+            },
+            { new: true }
+        );
+
+        const updatedUser = await User.findById(req.params.id).select('-password');
+
         res.status(200).json(updatedUser);
     } catch (err) {
         next(err);

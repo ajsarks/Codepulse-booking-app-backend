@@ -120,13 +120,15 @@ export const login = async (req, res, next) => {
     const token = jwt.sign(
       { id: user._id, isAdmin: user.isAdmin },
       process.env.JWT,
-      { expiresIn: '1h' }
+      { expiresIn: '2h' }
     );
 
     const { password: _, isAdmin, ...otherDetails } = user._doc;
     res
       .cookie('access_token', token, {
         httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', // Set to true in production
+        sameSite: 'None', // Ensure cross-site cookies are allowed
       })
       .status(200)
       .json({ details: { ...otherDetails }, isAdmin });
@@ -230,6 +232,7 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 // Email confirmation route
 export const confirmEmailHandler = async (req, res, next) => {
   try {

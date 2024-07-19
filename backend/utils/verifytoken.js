@@ -3,6 +3,24 @@ import { createError } from "../utils/error.js";
 import Booking from '../models/booking.js'; // Import the Booking model
 import User from '../models/user.js'; // Import the User model
 
+export const verifyToken = (req, res, next) => {
+  const token = req.cookies.access_token || req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    console.log('Token not found');
+    return next(createError(401, "You are not authenticated!"));
+  }
+
+  jwt.verify(token, process.env.JWT, (err, user) => {
+    if (err) {
+      console.log('Token verification failed', err);
+      return next(createError(403, "Token is not valid!"));
+    }
+    req.user = user;
+    console.log('Token verified successfully', user);
+    next();
+  });
+};
+
 export const verifyBookingOwnerOrAdmin = (req, res, next) => {
   verifyToken(req, res, async (err) => {
     if (err) return next(err);
@@ -22,21 +40,9 @@ export const verifyBookingOwnerOrAdmin = (req, res, next) => {
       next(createError(500, "Internal Server Error"));
     }
   });
-}; 
-
-export const verifyToken = (req, res, next) => {
-  const token = req.cookies.access_token;
-  if (!token) {
-    return next(createError(401, "You are not authenticated!"));
-  }
-
-  jwt.verify(token, process.env.JWT, (err, user) => {
-    if (err) return next(createError(403, "Token is not valid!"));
-    req.user = user;
-    next();
-  });
 };
 
+// Middleware to verify user owner or admin
 export const verifyUserOwnerOrAdmin = (req, res, next) => {
   verifyToken(req, res, async (err) => {
     if (err) return next(err);
@@ -58,6 +64,7 @@ export const verifyUserOwnerOrAdmin = (req, res, next) => {
   });
 };
 
+// Middleware to verify user
 export const verifyUser = (req, res, next) => {
   verifyToken(req, res, (err) => {
     if (err) return next(err);
@@ -70,6 +77,7 @@ export const verifyUser = (req, res, next) => {
   });
 };
 
+// Middleware to verify admin
 export const verifyAdmin = (req, res, next) => {
   verifyToken(req, res, (err) => {
     if (err) return next(err);
@@ -80,4 +88,4 @@ export const verifyAdmin = (req, res, next) => {
       return next(createError(403, "You are not authorized!"));
     }
   });
-}
+};

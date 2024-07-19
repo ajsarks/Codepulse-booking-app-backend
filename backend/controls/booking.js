@@ -78,7 +78,8 @@ export const createBooking = async (req, res) => {
       phonenumber,
       additionalcomments,
       classsetting,
-      isconfirmed: false // Default value
+      isconfirmed: false, // Default value
+      status: 'pending' // Default status
     }); 
 
     await booking.save();
@@ -110,8 +111,9 @@ export const createBooking = async (req, res) => {
 const scheduleCancellation = async (bookingId, cancellationDate) => {
   const job = schedule.scheduleJob(cancellationDate, async () => {
     const booking = await Booking.findById(bookingId);
-    if (booking && !booking.isconfirmed) {
-      await Booking.findByIdAndDelete(bookingId);
+    if (booking && booking.status === 'pending') {
+      booking.status = 'cancelled';
+      await booking.save();
 
       // Free team members' unavailable dates
       const teamMemberIds = booking.teamMember;
@@ -206,7 +208,8 @@ export const updateBooking = async (req, res) => {
       phonenumber,
       additionalcomments,
       classsetting,
-      isconfirmed: req.user.isAdmin // Set isconfirmed based on admin status
+      isconfirmed: req.user.isAdmin, // Set isconfirmed based on admin status
+      status: req.user.isAdmin ? 'confirmed' : 'pending' // Update status based on admin status
     }, { new: true, runValidators: true });
 
     if (!updatedBooking) {
@@ -225,7 +228,6 @@ export const updateBooking = async (req, res) => {
   }
 };
 
-
 export const confirmBooking = async (req, res) => {
   try {
     const bookingId = req.params.id;
@@ -238,39 +240,49 @@ export const confirmBooking = async (req, res) => {
 
     // Mark the booking as confirmed
     booking.isconfirmed = true;
+    booking.status = 'confirmed';
     await booking.save();
-
-    // Check if today is two days before the booking date
-    const today = new Date();
-    const twoDaysBefore = new Date(booking.date[0]);
-    twoDaysBefore.setDate(twoDaysBefore.getDate() - 2);
-
-    if (today.getTime() >= twoDaysBefore.getTime()) {
-      // If today is two days before or after the booking date, cancel the booking
-      await Booking.findByIdAndDelete(bookingId);
-
-      // Free team members' unavailable dates
-      const teamMemberIds = booking.teamMember;
-      const bookingDate = new Date(booking.date[0]);
-
-      for (const memberId of teamMemberIds) {
-        const teamMember = await TeamMember.findById(memberId); // Corrected import path
-        if (teamMember) {
-          const index = teamMember.unavailableDates.findIndex(date => date.getTime() === bookingDate.getTime());
-          if (index !== -1) {
-            teamMember.unavailableDates.splice(index, 1);
-            await teamMember.save();
-          }
-        }
-      }
-
-      return res.status(400).json({ message: `Booking automatically canceled as it was not confirmed two days before the date.` });
-    }
 
     res.status(200).json({ message: 'Booking confirmed successfully.', booking });
   } catch (error) {
     console.error('Error confirming booking:', error);
     res.status(500).json({ message: 'Failed to confirm booking.', error: error.message });
+  }
+};
+
+export const cancelBooking = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+
+    // Find the booking by ID
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found.' });
+    }
+
+    // Mark the booking as cancelled
+    booking.status = 'cancelled';
+    await booking.save();
+
+    // Free team members' unavailable dates
+    const teamMemberIds = booking.teamMember;
+    teamMemberIds.forEach(async (memberId) => {
+      const teamMember = await TeamMember.findById(memberId);
+      if (teamMember) {
+        booking.date.forEach(date => {
+          const index = teamMember.unavailableDates.findIndex(d => d.getTime() === new Date(date).getTime());
+          if (index !== -1) {
+            teamMember.unavailableDates.splice(index, 1);
+          }
+        });
+        await teamMember.save();
+      }
+    });
+
+    res.status(200).json({ message: 'Booking cancelled successfully.', booking });
+  } catch (error) {
+    console.error('Error cancelling booking:', error);
+    res.status(500).json({ message: 'Failed to cancel booking.', error: error.message });
   }
 };
 
@@ -331,6 +343,7 @@ export const getBookingById = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch booking.', error: error.message });
   }
 };
+
 export const getBookingsByUserId = async (req, res) => {
   try {
     const userId = req.params.userId;

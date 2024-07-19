@@ -4,6 +4,7 @@ import {
   updateBooking,
   deleteBooking,
   confirmBooking,
+  cancelBooking,
   getAllBookings,
   getBookingById,
   getBookingsByUserId 
@@ -13,23 +14,23 @@ import { verifyAdmin, verifyToken, verifyUser } from "../utils/verifytoken.js";
 const router = express.Router();
 
 // Route to create a booking
-router.post('/',  createBooking);
+router.post('/', createBooking);
 
 // Route to update a booking
 router.put('/:id', verifyUser, updateBooking);
 
 // Route to delete a booking
-router.delete('/:id', verifyUser, deleteBooking);
-
-// Admin routes to update and delete any booking
-router.put('/:id', verifyAdmin, updateBooking);
 router.delete('/:id', verifyAdmin, deleteBooking);
 
 // Route to confirm a booking by admin
 router.put('/confirm/:id', verifyAdmin, confirmBooking);
 
+// Route to cancel a booking
+router.put('/cancel/:id', verifyUser, cancelBooking);
+router.put('/cancel/:id', verifyAdmin, cancelBooking);
+
 // Route to get all bookings
-router.get('/',  getAllBookings);
+router.get('/', getAllBookings);
 
 // Route to get a booking by ID
 router.get('/:id', getBookingById);

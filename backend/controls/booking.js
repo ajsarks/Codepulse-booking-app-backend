@@ -6,6 +6,7 @@ import Class from '../models/classes.js'; // Renamed to avoid using the reserved
 import TeamMember from '../models/TeamMembers.js'; // Corrected import path
 import schedule from 'node-schedule'; // Import node-schedule for scheduling jobs
 import findNextAvailableDate from '../utils/nextabvialable.js'; // Corrected import path
+import  sendEmail  from '../utils/email.js'; // Import the sendEmail function
 
 export const createBooking = async (req, res) => {
   try {
@@ -82,6 +83,15 @@ export const createBooking = async (req, res) => {
     }); 
 
     await booking.save();
+
+    // Send email to the user and admin
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const userEmail = user.email;
+    const subject = 'Booking Created';
+    const text = `Dear ${user.name},\n\nYour booking has been created successfully.\n\nBooking Details:\nDate: ${date.join(', ')}\nTime: ${time}\nLocation: ${location}\nClass ID: ${classid}\nPhone Number: ${phonenumber}\nAdditional Comments: ${additionalcomments}\nClass Setting: ${classsetting}\n\nThank you.`;
+
+    await sendEmail(userEmail, subject, text);
+    await sendEmail(adminEmail, subject, `A new booking has been created by ${user.name}.\n\nBooking Details:\nDate: ${date.join(', ')}\nTime: ${time}\nLocation: ${location}\nClass ID: ${classid}\nPhone Number: ${phonenumber}\nAdditional Comments: ${additionalcomments}\nClass Setting: ${classsetting}`);
 
     // Schedule automatic cancellation if booking is not confirmed two days before the first date
     const twoDaysBefore = new Date(date[0]);
@@ -242,6 +252,15 @@ export const confirmBooking = async (req, res) => {
     booking.status = 'confirmed';
     await booking.save();
 
+    // Send email to the user and admin
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const userEmail = booking.email;
+    const subject = 'Booking Confirmed';
+    const text = `Dear ${booking.name},\n\nYour booking has been confirmed.\n\nBooking Details:\nDate: ${booking.date.join(', ')}\nTime: ${booking.time}\nLocation: ${booking.location}\nClass ID: ${booking.classid}\nPhone Number: ${booking.phonenumber}\nAdditional Comments: ${booking.additionalcomments}\nClass Setting: ${booking.classsetting}\n\nThank you.`;
+
+    await sendEmail(userEmail, subject, text);
+    await sendEmail(adminEmail, subject, `The booking by ${booking.name} has been confirmed.\n\nBooking Details:\nDate: ${booking.date.join(', ')}\nTime: ${booking.time}\nLocation: ${booking.location}\nClass ID: ${booking.classid}\nPhone Number: ${booking.phonenumber}\nAdditional Comments: ${booking.additionalcomments}\nClass Setting: ${booking.classsetting}`);
+
     res.status(200).json({ message: 'Booking confirmed successfully.', booking });
   } catch (error) {
     console.error('Error confirming booking:', error);
@@ -277,6 +296,15 @@ export const cancelBooking = async (req, res) => {
         await teamMember.save();
       }
     });
+
+    // Send email to the user and admin
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const userEmail = booking.email;
+    const subject = 'Booking Cancelled';
+    const text = `Dear ${booking.name},\n\nYour booking has been cancelled.\n\nBooking Details:\nDate: ${booking.date.join(', ')}\nTime: ${booking.time}\nLocation: ${booking.location}\nClass ID: ${booking.classid}\nPhone Number: ${booking.phonenumber}\nAdditional Comments: ${booking.additionalcomments}\nClass Setting: ${booking.classsetting}\n\nThank you.`;
+
+    await sendEmail(userEmail, subject, text);
+    await sendEmail(adminEmail, subject, `The booking by ${booking.name} has been cancelled.\n\nBooking Details:\nDate: ${booking.date.join(', ')}\nTime: ${booking.time}\nLocation: ${booking.location}\nClass ID: ${booking.classid}\nPhone Number: ${booking.phonenumber}\nAdditional Comments: ${booking.additionalcomments}\nClass Setting: ${booking.classsetting}`);
 
     res.status(200).json({ message: 'Booking cancelled successfully.', booking });
   } catch (error) {

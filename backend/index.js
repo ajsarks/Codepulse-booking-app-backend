@@ -15,7 +15,8 @@ import teamsRoute from './routes/teams.js';
 import classRoute from './routes/classes.js';
 import bookingRoute from './routes/booking.js';
 import confirmationRoute from './routes/confirmation.js';
-import teammembersroute from './routes/teamember.js'
+import teammembersroute from './routes/teamember.js';
+import contactRoute from './routes/contact.js'; // Import contact route
 
 dotenv.config();
 
@@ -52,9 +53,10 @@ app.use('/api/teams', teamsRoute);
 app.use('/api/booking', bookingRoute);
 app.use('/api/confirmation', confirmationRoute);
 app.use('/api/teammembers', teammembersroute); // Added this line
+app.use('/api/contact', contactRoute); // Added this line
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGO_URL)
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error('Could not connect to MongoDB', err));
 

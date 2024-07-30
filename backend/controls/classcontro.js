@@ -1,10 +1,7 @@
 import axios from 'axios';
-import rateLimit from 'axios-rate-limit';
 import Class from '../models/classes.js';
 import Teams from '../models/teams.js';
 import { createError } from '../utils/error.js';
-
-const http = rateLimit(axios.create(), { maxRequests: 1, perMilliseconds: 1000 });
 
 // Helper function to fetch team IDs from team names
 const getTeamIds = async (teamNames) => {
@@ -17,7 +14,7 @@ const getTeamIds = async (teamNames) => {
 const getNearbyCities = async (city) => {
   try {
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&addressdetails=1&limit=1`;
-    const response = await http.get(url, {
+    const response = await axios.get(url, {
       headers: {
         'User-Agent': 'YourAppName/1.0 (your@email.com)'
       }
@@ -27,7 +24,7 @@ const getNearbyCities = async (city) => {
       const { lat, lon } = response.data[0];
 
       const nearbyUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10`;
-      const nearbyResponse = await http.get(nearbyUrl, {
+      const nearbyResponse = await axios.get(nearbyUrl, {
         headers: {
           'User-Agent': 'YourAppName/1.0 (your@email.com)'
         }
@@ -43,13 +40,13 @@ const getNearbyCities = async (city) => {
   }
 };
 
-// Function to get cities from team addresses
+// Updated function to get cities from team addresses including nearby cities
 const getTeamCities = async (teamIds) => {
   const teams = await Teams.find({ _id: { $in: teamIds } });
   const cities = [];
   for (const team of teams) {
-    const nearbyCities = await getNearbyCities(team.address);
-    cities.push(...nearbyCities);
+    const teamCity = await getNearbyCities(team.address);
+    cities.push(...teamCity);
   }
   return cities;
 };
@@ -67,7 +64,7 @@ export const createClass = async (req, res, next) => {
     const city = req.body.city;
     const nearbyCities = await getNearbyCities(city);
 
-    // Fetch team cities
+    // Fetch team cities including nearby ones
     const teamCities = await getTeamCities(teamIds);
 
     const cities = Array.from(new Set([city, ...nearbyCities, ...teamCities]));
@@ -106,7 +103,7 @@ export const updateClass = async (req, res, next) => {
     const city = req.body.city;
     const nearbyCities = await getNearbyCities(city);
 
-    // Fetch team cities
+    // Fetch team cities including nearby ones
     const teamCities = await getTeamCities(teamIds);
 
     const cities = Array.from(new Set([city, ...nearbyCities, ...teamCities]));

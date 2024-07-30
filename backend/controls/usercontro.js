@@ -33,7 +33,7 @@ export const deleteUser = async (req, res, next) => {
 
 export const updateUser = async (req, res, next) => {
     try {
-        const { name, email, password, isConfirmed } = req.body;
+        const { name, email, password, isConfirmed, isAdmin } = req.body;
 
         if (!name) {
             return next(createError(400, 'Name is required'));
@@ -41,30 +41,36 @@ export const updateUser = async (req, res, next) => {
         if (!email || !emailValidator.validate(email)) {
             return next(createError(400, 'Valid email is required'));
         }
-        if (!password) {
-            return next(createError(400, 'Password is required'));
-        }
-        if (password.length < 8 || !/[^a-zA-Z]/.test(password)) {
-            return next(createError(400, 'Password must be at least 8 characters long and contain at least one non-alphabetical character'));
+
+        let updateFields = {
+            name,
+            email,
+            isConfirmed: isConfirmed || false,
+            isAdmin: isAdmin || false
+        };
+
+        if (password) {
+            if (password.length < 8 || !/[^a-zA-Z]/.test(password)) {
+                return next(createError(400, 'Password must be at least 8 characters long and contain at least one non-alphabetical character'));
+            }
+            updateFields.password = bcrypt.hashSync(password, 10);
         }
 
-        const hashedPassword = bcrypt.hashSync(password, 10);
-
-        await User.findByIdAndUpdate(
+        const updatedUser = await User.findByIdAndUpdate(
             req.params.id,
-            {
-                name,
-                email,
-                password: hashedPassword,
-                isConfirmed,
-            },
-            { new: true }
-        );
+            updateFields,
+            { new: true, runValidators: true }
+        ).select('-password');
 
-        const updatedUser = await User.findById(req.params.id).select('-password');
+        if (!updatedUser) {
+            return next(createError(404, 'User not found'));
+        }
 
         res.status(200).json(updatedUser);
     } catch (err) {
+        if (err.code === 11000) {
+            return next(createError(400, 'Email already exists'));
+        }
         next(err);
     }
 };

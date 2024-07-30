@@ -52,7 +52,7 @@ const resendConfirmationEmail = async (email) => {
 // Registration function
 export const register = async (req, res, next) => {
   try {
-    const { name, email, password, isConfirmed } = req.body;
+    const { name, email, password, isConfirmed, isAdmin } = req.body;
 
     if (!name) {
       return next(createError(400, 'Name is required'));
@@ -73,7 +73,8 @@ export const register = async (req, res, next) => {
       name,
       email,
       password: hashedPassword,
-      isConfirmed: isConfirmed,
+      isConfirmed: isConfirmed || false,
+      isAdmin: isAdmin || false
     });
 
     await newUser.save();

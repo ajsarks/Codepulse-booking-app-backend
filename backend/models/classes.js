@@ -14,7 +14,7 @@ const classSchema = new mongoose.Schema({
     required: true,
   },
   city: {
-    type: String,
+    type: [String], // Changed to an array of strings to accommodate multiple cities
     required: true,
     lowercase: true, // Standardize to lowercase for consistent searching
   },
@@ -42,4 +42,4 @@ const classSchema = new mongoose.Schema({
   }],
 });
 
-export default mongoose.model('Class', classSchema);
+export default mongoose.model('Class', classSchema)

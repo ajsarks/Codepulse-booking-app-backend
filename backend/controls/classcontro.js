@@ -1,12 +1,57 @@
+import axios from 'axios';
+import rateLimit from 'axios-rate-limit';
 import Class from '../models/classes.js';
 import Teams from '../models/teams.js';
 import { createError } from '../utils/error.js';
+
+const http = rateLimit(axios.create(), { maxRequests: 1, perMilliseconds: 1000 });
 
 // Helper function to fetch team IDs from team names
 const getTeamIds = async (teamNames) => {
   const teams = await Teams.find({ name: { $in: teamNames } });
   const teamIds = teams.map(team => team._id);
   return teamIds;
+};
+
+// Function to fetch cities within a 10km radius
+const getNearbyCities = async (city) => {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&addressdetails=1&limit=1`;
+    const response = await http.get(url, {
+      headers: {
+        'User-Agent': 'YourAppName/1.0 (your@email.com)'
+      }
+    });
+    
+    if (response.data && response.data.length > 0) {
+      const { lat, lon } = response.data[0];
+
+      const nearbyUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10`;
+      const nearbyResponse = await http.get(nearbyUrl, {
+        headers: {
+          'User-Agent': 'YourAppName/1.0 (your@email.com)'
+        }
+      });
+      
+      const nearbyCities = nearbyResponse.data.address.city || nearbyResponse.data.address.town;
+      return nearbyCities ? [nearbyCities] : [];
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching nearby cities:', error.message);
+    return [];
+  }
+};
+
+// Function to get cities from team addresses
+const getTeamCities = async (teamIds) => {
+  const teams = await Teams.find({ _id: { $in: teamIds } });
+  const cities = [];
+  for (const team of teams) {
+    const nearbyCities = await getNearbyCities(team.address);
+    cities.push(...nearbyCities);
+  }
+  return cities;
 };
 
 // CREATE a new class
@@ -18,12 +63,21 @@ export const createClass = async (req, res, next) => {
       teamIds = await getTeamIds(req.body.teams);
     }
 
+    // Fetch nearby cities
+    const city = req.body.city;
+    const nearbyCities = await getNearbyCities(city);
+
+    // Fetch team cities
+    const teamCities = await getTeamCities(teamIds);
+
+    const cities = Array.from(new Set([city, ...nearbyCities, ...teamCities]));
+
     // Create and save a new class instance with linked team IDs
     const newClass = new Class({
       name: req.body.name,
       description: req.body.description,
       price: req.body.price,
-      city: req.body.city,
+      city: cities,
       type: req.body.type,
       daysrequired: req.body.daysrequired,
       oneLiner: req.body.oneliner,
@@ -48,9 +102,19 @@ export const updateClass = async (req, res, next) => {
       teamIds = await getTeamIds(req.body.teams);
     }
 
+    // Fetch nearby cities
+    const city = req.body.city;
+    const nearbyCities = await getNearbyCities(city);
+
+    // Fetch team cities
+    const teamCities = await getTeamCities(teamIds);
+
+    const cities = Array.from(new Set([city, ...nearbyCities, ...teamCities]));
+
     // Update the class with new data and linked team IDs
     const updatedClass = await Class.findByIdAndUpdate(req.params.id, {
       ...req.body,
+      city: cities,
       teams: teamIds
     }, { new: true });
 
@@ -111,7 +175,10 @@ export const countByCity = async (req, res, next) => {
 export const searchByCity = async (req, res, next) => {
   try {
     const city = req.query.city;
-    const classes = await Class.find({ city: new RegExp(`^${city}$`, 'i') });
+    const nearbyCities = await getNearbyCities(city);
+    const cities = Array.from(new Set([city, ...nearbyCities]));
+
+    const classes = await Class.find({ city: { $in: cities.map(c => new RegExp(`^${c}$`, 'i')) } });
     res.status(200).json(classes);
   } catch (err) {
     next(err); // Passes the error to the global error handler

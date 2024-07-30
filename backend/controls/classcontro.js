@@ -103,23 +103,27 @@ export const updateClass = async (req, res, next) => {
     const city = req.body.city;
     const nearbyCities = await getNearbyCities(city);
 
-    // Fetch team cities including nearby ones
+    // Fetch team cities
     const teamCities = await getTeamCities(teamIds);
 
-    const cities = Array.from(new Set([city, ...nearbyCities, ...teamCities]));
+    // Flatten the cities array, remove duplicates, and ensure all elements are strings
+    const cities = Array.from(new Set([city, ...nearbyCities.flat(), ...teamCities.flat()]))
+      .filter(Boolean)
+      .map(String);
 
     // Update the class with new data and linked team IDs
     const updatedClass = await Class.findByIdAndUpdate(req.params.id, {
       ...req.body,
       city: cities,
       teams: teamIds
-    }, { new: true });
+    }, { new: true, runValidators: true });
 
     if (!updatedClass) {
       return next(createError(404, "Class not found"));
     }
     res.status(200).json(updatedClass);
   } catch (err) {
+    console.error('Error in updateClass:', err);
     next(err); // Passes the error to the global error handler
   }
 };

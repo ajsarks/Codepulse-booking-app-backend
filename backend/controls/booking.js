@@ -65,6 +65,10 @@ export const createBooking = async (req, res) => {
       return res.status(400).json({ message: 'No team members available on the requested dates.', allocationErrors });
     }
 
+    // Fetch the class name
+    const classDetails = await Class.findById(classid);
+    const className = classDetails ? classDetails.name : 'Unknown Class';
+
     // Create the booking with 'name' from the payload
     const booking = new Booking({
       date, // Ensure this matches the schema field name
@@ -86,13 +90,13 @@ export const createBooking = async (req, res) => {
 
     // Send email to the user
     const userSubject = 'Booking Created';
-    const userText = `Dear ${user.name},\n\nYour booking has been created successfully.\n\nBooking Details:\nDate: ${date.join(', ')}\nTime: ${time}\nLocation: ${location}\nClass ID: ${classid}\nPhone Number: ${phonenumber}\nAdditional Comments: ${additionalcomments}\nClass Setting: ${classsetting}\n\nThank you.`;
+    const userText = `Dear ${user.name},\n\nYour booking has been created successfully.\n\nBooking Details:\nDate: ${date.join(', ')}\nTime: ${time}\nLocation: ${location}\nClass: ${className}\nPhone Number: ${phonenumber}\nAdditional Comments: ${additionalcomments}\nClass Setting: ${classsetting}\n\nThank you.`;
     await sendEmail(user.email, userSubject, userText);
 
     // Send email to the admin
     const adminEmail = process.env.EMAIL; // Use the email from .env
     const adminSubject = 'New Booking Created';
-    const adminText = `A new booking has been created by ${user.name}.\n\nBooking Details:\nDate: ${date.join(', ')}\nTime: ${time}\nLocation: ${location}\nClass ID: ${classid}\nPhone Number: ${phonenumber}\nAdditional Comments: ${additionalcomments}\nClass Setting: ${classsetting}`;
+    const adminText = `A new booking has been created by ${user.name}.\n\nBooking Details:\nDate: ${date.join(', ')}\nTime: ${time}\nLocation: ${location}\nClass: ${className}\nPhone Number: ${phonenumber}\nAdditional Comments: ${additionalcomments}\nClass Setting: ${classsetting}`;
     await sendEmail(adminEmail, adminSubject, adminText);
 
     // Schedule automatic cancellation if booking is not confirmed two days before the first date
@@ -254,15 +258,19 @@ export const confirmBooking = async (req, res) => {
     booking.status = 'confirmed';
     await booking.save();
 
+    // Fetch the class name
+    const classDetails = await Class.findById(booking.classid);
+    const className = classDetails ? classDetails.name : 'Unknown Class';
+
     // Send email to the user
     const userSubject = 'Booking Confirmed';
-    const userText = `Dear ${booking.name},\n\nYour booking has been confirmed.\n\nBooking Details:\nDate: ${booking.date.join(', ')}\nTime: ${booking.time}\nLocation: ${booking.location}\nClass ID: ${booking.classid}\nPhone Number: ${booking.phonenumber}\nAdditional Comments: ${booking.additionalcomments}\nClass Setting: ${booking.classsetting}\n\nThank you.`;
+    const userText = `Dear ${booking.name},\n\nYour booking has been confirmed.\n\nBooking Details:\nDate: ${booking.date.join(', ')}\nTime: ${booking.time}\nLocation: ${booking.location}\nClass: ${className}\nPhone Number: ${booking.phonenumber}\nAdditional Comments: ${booking.additionalcomments}\nClass Setting: ${booking.classsetting}\n\nThank you.`;
     await sendEmail(booking.email, userSubject, userText);
 
     // Send email to the admin
     const adminEmail = process.env.EMAIL; // Use the email from .env
     const adminSubject = 'Booking Confirmed';
-    const adminText = `The booking by ${booking.name} has been confirmed.\n\nBooking Details:\nDate: ${booking.date.join(', ')}\nTime: ${booking.time}\nLocation: ${booking.location}\nClass ID: ${booking.classid}\nPhone Number: ${booking.phonenumber}\nAdditional Comments: ${booking.additionalcomments}\nClass Setting: ${booking.classsetting}`;
+    const adminText = `The booking by ${booking.name} has been confirmed.\n\nBooking Details:\nDate: ${booking.date.join(', ')}\nTime: ${booking.time}\nLocation: ${booking.location}\nClass: ${className}\nPhone Number: ${booking.phonenumber}\nAdditional Comments: ${booking.additionalcomments}\nClass Setting: ${booking.classsetting}`;
     await sendEmail(adminEmail, adminSubject, adminText);
 
     res.status(200).json({ message: 'Booking confirmed successfully.', booking });
@@ -301,15 +309,19 @@ export const cancelBooking = async (req, res) => {
       }
     });
 
+    // Fetch the class name
+    const classDetails = await Class.findById(booking.classid);
+    const className = classDetails ? classDetails.name : 'Unknown Class';
+
     // Send email to the user
     const userSubject = 'Booking Cancelled';
-    const userText = `Dear ${booking.name},\n\nYour booking has been cancelled.\n\nBooking Details:\nDate: ${booking.date.join(', ')}\nTime: ${booking.time}\nLocation: ${booking.location}\nClass ID: ${booking.classid}\nPhone Number: ${booking.phonenumber}\nAdditional Comments: ${booking.additionalcomments}\nClass Setting: ${booking.classsetting}\n\nThank you.`;
+    const userText = `Dear ${booking.name},\n\nYour booking has been cancelled.\n\nBooking Details:\nDate: ${booking.date.join(', ')}\nTime: ${booking.time}\nLocation: ${booking.location}\nClass: ${className}\nPhone Number: ${booking.phonenumber}\nAdditional Comments: ${booking.additionalcomments}\nClass Setting: ${booking.classsetting}\n\nThank you.`;
     await sendEmail(booking.email, userSubject, userText);
 
     // Send email to the admin
     const adminEmail = process.env.EMAIL; // Use the email from .env
     const adminSubject = 'Booking Cancelled';
-    const adminText = `The booking by ${booking.name} has been cancelled.\n\nBooking Details:\nDate: ${booking.date.join(', ')}\nTime: ${booking.time}\nLocation: ${booking.location}\nClass ID: ${booking.classid}\nPhone Number: ${booking.phonenumber}\nAdditional Comments: ${booking.additionalcomments}\nClass Setting: ${booking.classsetting}`;
+    const adminText = `The booking by ${booking.name} has been cancelled.\n\nBooking Details:\nDate: ${booking.date.join(', ')}\nTime: ${booking.time}\nLocation: ${booking.location}\nClass: ${className}\nPhone Number: ${booking.phonenumber}\nAdditional Comments: ${booking.additionalcomments}\nClass Setting: ${booking.classsetting}`;
     await sendEmail(adminEmail, adminSubject, adminText);
 
     res.status(200).json({ message: 'Booking cancelled successfully.', booking });

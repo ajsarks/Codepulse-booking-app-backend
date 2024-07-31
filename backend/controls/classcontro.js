@@ -67,12 +67,17 @@ export const createClass = async (req, res, next) => {
     // Fetch team cities including nearby ones
     const teamCities = await getTeamCities(teamIds);
 
-    // Modify the cities array to ensure spaces between city names
+    // Combine all cities, remove duplicates, and ensure proper formatting
     const cities = Array.from(new Set([city, ...nearbyCities, ...teamCities]))
       .filter(Boolean)
       .map(c => String(c).trim())
-      .join(', ')
-      .split(', ');
+      .reduce((acc, curr) => {
+        const lowercased = curr.toLowerCase();
+        if (!acc.some(city => city.toLowerCase() === lowercased)) {
+          acc.push(curr);
+        }
+        return acc;
+      }, []);
 
     // Create and save a new class instance with linked team IDs
     const newClass = new Class({
@@ -111,12 +116,17 @@ export const updateClass = async (req, res, next) => {
     // Fetch team cities
     const teamCities = await getTeamCities(teamIds);
 
-    // Modify the cities array to ensure spaces between city names
+    // Combine all cities, remove duplicates, and ensure proper formatting
     const cities = Array.from(new Set([city, ...nearbyCities.flat(), ...teamCities.flat()]))
       .filter(Boolean)
       .map(c => String(c).trim())
-      .join(', ')
-      .split(', ');
+      .reduce((acc, curr) => {
+        const lowercased = curr.toLowerCase();
+        if (!acc.some(city => city.toLowerCase() === lowercased)) {
+          acc.push(curr);
+        }
+        return acc;
+      }, []);
 
     // Update the class with new data and linked team IDs
     const updatedClass = await Class.findByIdAndUpdate(req.params.id, {

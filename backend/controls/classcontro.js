@@ -60,24 +60,36 @@ export const createClass = async (req, res, next) => {
       teamIds = await getTeamIds(req.body.teams);
     }
 
-    // Fetch nearby cities
-    const city = req.body.city;
-    const nearbyCities = await getNearbyCities(city);
-
-    // Fetch team cities including nearby ones
-    const teamCities = await getTeamCities(teamIds);
-
-    // Combine all cities, remove duplicates, and ensure proper formatting
-    const cities = Array.from(new Set([city, ...nearbyCities, ...teamCities]))
-      .filter(Boolean)
-      .map(c => String(c).trim())
-      .reduce((acc, curr) => {
-        const lowercased = curr.toLowerCase();
-        if (!acc.some(city => city.toLowerCase() === lowercased)) {
-          acc.push(curr);
+    // Handle city or cities
+    let cities = [];
+    if (req.body.city) {
+      const newCities = Array.isArray(req.body.city) ? req.body.city : [req.body.city];
+      for (const newCity of newCities) {
+        const lowerNewCity = String(newCity).toLowerCase();
+        if (!cities.includes(lowerNewCity)) {
+          cities.push(lowerNewCity);
+          const nearbyCities = await getNearbyCities(newCity);
+          nearbyCities.forEach(c => {
+            const lowerC = String(c).toLowerCase();
+            if (!cities.includes(lowerC)) {
+              cities.push(lowerC);
+            }
+          });
         }
-        return acc;
-      }, []);
+      }
+    }
+
+    // Fetch team cities
+    const teamCities = await getTeamCities(teamIds);
+    teamCities.forEach(c => {
+      const lowerC = String(c).toLowerCase();
+      if (!cities.includes(lowerC)) {
+        cities.push(lowerC);
+      }
+    });
+
+    // Convert back to proper case
+    cities = cities.map(c => c.charAt(0).toUpperCase() + c.slice(1));
 
     // Create and save a new class instance with linked team IDs
     const newClass = new Class({
@@ -109,24 +121,44 @@ export const updateClass = async (req, res, next) => {
       teamIds = await getTeamIds(req.body.teams);
     }
 
-    // Fetch nearby cities
-    const city = req.body.city;
-    const nearbyCities = await getNearbyCities(city);
+    // Fetch the existing class
+    const existingClass = await Class.findById(req.params.id);
+    if (!existingClass) {
+      return next(createError(404, "Class not found"));
+    }
+
+    // Start with existing cities
+    let cities = existingClass.city.map(c => String(c).toLowerCase());
+
+    // Handle new city or cities
+    if (req.body.city) {
+      const newCities = Array.isArray(req.body.city) ? req.body.city : [req.body.city];
+      for (const newCity of newCities) {
+        const lowerNewCity = String(newCity).toLowerCase();
+        if (!cities.includes(lowerNewCity)) {
+          cities.push(lowerNewCity);
+          const nearbyCities = await getNearbyCities(newCity);
+          nearbyCities.forEach(c => {
+            const lowerC = String(c).toLowerCase();
+            if (!cities.includes(lowerC)) {
+              cities.push(lowerC);
+            }
+          });
+        }
+      }
+    }
 
     // Fetch team cities
     const teamCities = await getTeamCities(teamIds);
+    teamCities.forEach(c => {
+      const lowerC = String(c).toLowerCase();
+      if (!cities.includes(lowerC)) {
+        cities.push(lowerC);
+      }
+    });
 
-    // Combine all cities, remove duplicates, and ensure proper formatting
-    const cities = Array.from(new Set([city, ...nearbyCities.flat(), ...teamCities.flat()]))
-      .filter(Boolean)
-      .map(c => String(c).trim())
-      .reduce((acc, curr) => {
-        const lowercased = curr.toLowerCase();
-        if (!acc.some(city => city.toLowerCase() === lowercased)) {
-          acc.push(curr);
-        }
-        return acc;
-      }, []);
+    // Convert back to proper case
+    cities = cities.map(c => c.charAt(0).toUpperCase() + c.slice(1));
 
     // Update the class with new data and linked team IDs
     const updatedClass = await Class.findByIdAndUpdate(req.params.id, {
@@ -135,9 +167,6 @@ export const updateClass = async (req, res, next) => {
       teams: teamIds
     }, { new: true, runValidators: true });
 
-    if (!updatedClass) {
-      return next(createError(404, "Class not found"));
-    }
     res.status(200).json(updatedClass);
   } catch (err) {
     console.error('Error in updateClass:', err);

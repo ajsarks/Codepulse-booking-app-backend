@@ -69,7 +69,8 @@ export const createClass = async (req, res, next) => {
 
     // Modify the cities array to ensure spaces between city names
     const cities = Array.from(new Set([city, ...nearbyCities, ...teamCities]))
-      .map(c => c.trim())
+      .filter(Boolean)
+      .map(c => String(c).trim())
       .join(', ')
       .split(', ');
 
@@ -113,7 +114,7 @@ export const updateClass = async (req, res, next) => {
     // Modify the cities array to ensure spaces between city names
     const cities = Array.from(new Set([city, ...nearbyCities.flat(), ...teamCities.flat()]))
       .filter(Boolean)
-      .map(c => c.trim())
+      .map(c => String(c).trim())
       .join(', ')
       .split(', ');
 

@@ -67,7 +67,11 @@ export const createClass = async (req, res, next) => {
     // Fetch team cities including nearby ones
     const teamCities = await getTeamCities(teamIds);
 
-    const cities = Array.from(new Set([city, ...nearbyCities, ...teamCities]));
+    // Modify the cities array to ensure spaces between city names
+    const cities = Array.from(new Set([city, ...nearbyCities, ...teamCities]))
+      .map(c => c.trim())
+      .join(', ')
+      .split(', ');
 
     // Create and save a new class instance with linked team IDs
     const newClass = new Class({
@@ -106,10 +110,12 @@ export const updateClass = async (req, res, next) => {
     // Fetch team cities
     const teamCities = await getTeamCities(teamIds);
 
-    // Flatten the cities array, remove duplicates, and ensure all elements are strings
+    // Modify the cities array to ensure spaces between city names
     const cities = Array.from(new Set([city, ...nearbyCities.flat(), ...teamCities.flat()]))
       .filter(Boolean)
-      .map(String);
+      .map(c => c.trim())
+      .join(', ')
+      .split(', ');
 
     // Update the class with new data and linked team IDs
     const updatedClass = await Class.findByIdAndUpdate(req.params.id, {

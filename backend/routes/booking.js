@@ -30,11 +30,11 @@ router.put('/cancel/:id', verifyBookingOwnerOrAdmin, cancelBooking);
 
 
 // Route to get all bookings
-router.get('/', getAllBookings);
+router.get('/', verifyAdmin, getAllBookings);
 
 // Route to get a booking by ID
-router.get('/:id', getBookingById);
+router.get('/:id', verifyBookingOwnerOrAdmin, getBookingById);
 
-router.get('/user/:userId', getBookingsByUserId);
+router.get('/user/:userId',  getBookingsByUserId);
 
 export default router;

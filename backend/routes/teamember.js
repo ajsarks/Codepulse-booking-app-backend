@@ -14,10 +14,10 @@ const router = express.Router();
 router.post('/', verifyAdmin, addTeamMember);
 
 // Route to get all team members
-router.get('/', getAllTeamMembers);
+router.get('/', verifyAdmin,getAllTeamMembers);
 
 // Route to get a specific team member by ID
-router.get('/:id', getTeamMemberById);
+router.get('/:id',verifyAdmin, getTeamMemberById);
 
 // Route to update a specific team member by ID
 router.put('/:id', verifyAdmin, updateTeamMember);

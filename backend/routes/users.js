@@ -21,9 +21,9 @@ router.put("/:id", verifyUserOwnerOrAdmin, updateUser);
 router.delete("/:id", verifyUserOwnerOrAdmin, deleteUser);
 
 // GET all users - no authentication required
-router.get("/", getAllUsers);
+router.get("/",verifyAdmin, getAllUsers);
 
 // GET a specific user by ID - no authentication required
-router.get("/:id", getUser);
+router.get("/:id",verifyUserOwnerOrAdmin, getUser);
 
 export default router;

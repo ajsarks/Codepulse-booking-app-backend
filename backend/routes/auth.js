@@ -29,7 +29,7 @@ router.get('/google/callback',
         const token = jwt.sign(
             { id: req.user._id, isAdmin: req.user.isAdmin },
             process.env.JWT,
-            { expiresIn: '1h' }
+            { expiresIn: '24h' }
         );
 
         res.cookie('access_token', token, {

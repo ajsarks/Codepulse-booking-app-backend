@@ -20,9 +20,9 @@ router.put('/:id', verifyAdmin, updateTeam);
 router.delete('/:id', verifyAdmin, deleteTeam);
 
 // Route to get an existing team by ID
-router.get('/:id', getTeam);
+router.get('/:id',verifyAdmin, getTeam);
 
 // Route to get all teams
-router.get('/', getAllTeams);
+router.get('/',verifyAdmin, getAllTeams);
 
 export default router;

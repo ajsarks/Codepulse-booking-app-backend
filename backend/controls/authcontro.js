@@ -81,9 +81,9 @@ export const register = async (req, res, next) => {
 
     if (!isConfirmed) {
       sendConfirmationEmail(newUser);
-      res.status(200).send('User has been created. Please confirm your email.');
+      res.status(200).json({ message: 'User has been created. Please confirm your email.' });
     } else {
-      res.status(200).send('User has been created and confirmed.');
+      res.status(200).json({ message: 'User has been created and confirmed.' });
     }
   } catch (err) {
     if (err.code === 11000) {
@@ -246,7 +246,7 @@ export const confirmEmailHandler = async (req, res, next) => {
     user.isConfirmed = true;
     await user.save();
 
-    res.status(200).send('Email confirmed, you can now log in.');
+    res.status(200).json({ message: 'Email confirmed, you can now log in.' });
   } catch (err) {
     next(err);
   }

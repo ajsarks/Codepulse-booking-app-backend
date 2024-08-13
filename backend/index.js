@@ -60,6 +60,20 @@ mongoose.connect(process.env.MONGO_URL)
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error('Could not connect to MongoDB', err));
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  const errorStatus = err.status || 500;
+  let errorBody;
+  
+  try {
+    errorBody = JSON.parse(err.message);
+  } catch (e) {
+    errorBody = { error: err.message || "Something went wrong!" };
+  }
+  
+  res.status(errorStatus).json(errorBody);
+});
+
 const PORT = process.env.PORT2 || 8000; // Default to 8000 if PORT2 is not set
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

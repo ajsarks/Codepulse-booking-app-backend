@@ -115,6 +115,10 @@ export const createBooking = async (req, res) => {
       }
     });
 
+    // Schedule booking deletion after six months
+    const lastDate = new Date(date[date.length - 1]);
+    scheduleBookingDeletion(booking._id, lastDate);
+
     res.status(201).json({ message: 'Booking created successfully.', booking });
   } catch (error) {
     console.error('Error creating booking:', error);
@@ -150,6 +154,25 @@ const scheduleCancellation = async (bookingId, cancellationDate) => {
   });
 
   console.log(`Cancellation job scheduled for booking ${bookingId} on ${cancellationDate}.`);
+};
+
+// Helper function to schedule booking deletion
+const scheduleBookingDeletion = (bookingId, lastDate) => {
+  const sixMonthsLater = new Date(lastDate);
+  sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
+
+  schedule.scheduleJob(sixMonthsLater, async () => {
+    try {
+      const deletedBooking = await Booking.findByIdAndDelete(bookingId);
+      if (deletedBooking) {
+        console.log(`Booking ${bookingId} automatically deleted after six months.`);
+      }
+    } catch (error) {
+      console.error(`Error deleting booking ${bookingId}:`, error);
+    }
+  });
+
+  console.log(`Deletion scheduled for booking ${bookingId} on ${sixMonthsLater}.`);
 };
 
 export const updateBooking = async (req, res) => {

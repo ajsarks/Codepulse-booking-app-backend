@@ -20,8 +20,14 @@ const bookingSchema = new mongoose.Schema({
     required: true
   },
   phonenumber: {
-    type: Number,
-    required: true
+    type: String,
+    required: true,
+    validate: {
+      validator: function(v) {
+        return /^\(\d{3}\)\s\d{3}-\d{4}$/.test(v);
+      },
+      message: props => `${props.value} is not a valid phone number! Format should be (XXX) XXX-XXXX`
+    }
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,

@@ -24,6 +24,6 @@ router.delete("/:id", verifyUserOwnerOrAdmin, deleteUser);
 router.get("/", verifyAdmin, getAllUsers);
 
 // GET a specific user by ID - no authentication required
-router.get("/:id",verifyUserOwnerOrAdmin, getUser);
+router.get("/:id", getUser);
 
 export default router;
